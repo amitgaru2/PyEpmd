@@ -83,10 +83,10 @@ class EpmdProtocol(asyncio.Protocol):
         elif packet[0] == EPMD_PORT2_REQ:
             return self._epmd_port_please(packet)
 
-        LOG.error("Unknown packet %d", packet[0])
+        logger.error("Unknown packet %d", packet[0])
 
     def _epmd_register(self, packet):
-        LOG.debug("Incoming ALIVE2_REQ")
+        logger.debug("Incoming ALIVE2_REQ")
         if self.addr_[0] not in ["127.0.0.1", "localhost"]:
             raise EpmdError(
                 msg="ALIVE2_REQ coming not from a local address %s" % self.addr_
