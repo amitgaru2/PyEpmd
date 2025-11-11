@@ -104,3 +104,5 @@ venv.bak/
 .mypy_cache/
 
 .vscode/
+
+tcp_proxy.log
