@@ -1,9 +1,14 @@
 import asyncio
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    filename="tcp_proxy.log",
+    filemode="a",
+)
 
-logger = logging.getLogger("tcp_proxy")
+logger = logging.getLogger()
 
 
 LISTEN_HOST = "0.0.0.0"
@@ -21,16 +26,21 @@ async def forward(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
             data = await reader.read(BUFFER_SIZE)
             if not data:
                 break
-            logger.info("Forwarding %d bytes", len(data))
+            logger.info(
+                "Forwarding %d bytes to %s",
+                len(data),
+                writer.get_extra_info("peername"),
+            )
             writer.write(data)
             await writer.drain()
     except Exception as e:
-        pass
+        logger.error("Error during forwarding: %s", e)
     finally:
         try:
             writer.close()
             await writer.wait_closed()
-        except:
+        except Exception as e:
+            logger.error("Error closing writer: %s", e)
             pass
 
 
@@ -53,7 +63,8 @@ async def handle_client(client_reader, client_writer):
 
 async def main():
     server = await asyncio.start_server(handle_client, LISTEN_HOST, LISTEN_PORT)
-    addr = server.sockets[0].getsockname()
+    # addr = server.sockets[0].getsockname()
+    # logger.info(f"Serving on {addr}")
     logger.info(
         f"Forwarding {LISTEN_HOST}:{LISTEN_PORT} -> {FORWARD_HOST}:{FORWARD_PORT}"
     )
