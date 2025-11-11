@@ -56,7 +56,7 @@ class EpmdProtocol(asyncio.Protocol):
         logger.info("Incoming from %s", self.addr_)
 
     def data_received(self, data: bytes) -> None:
-        logger.info("Data received from %s: %s", self.addr_, data)
+        logger.debug("Data received from %s: %s", self.addr_, data)
         self.unconsumed_data_ += data
         if len(self.unconsumed_data_) < 2:
             # Not even length is read yet
@@ -131,6 +131,9 @@ class EpmdProtocol(asyncio.Protocol):
         # 1     1	    2	    1	        1	        2 	            2	            2	    Nlen	    2	    Elen
         # 119	Result	PortNo	NodeType	Protocol	HighestVersion	LowestVersion	Nlen	NodeName	Elen	>Extra
         if node is not None:
+            if node_name == b"b":
+                node_name = b"c"
+                node["port"] = 5555
             response = pack(
                 f">BBHBBHHH{len(node_name)}sH0s",
                 EPMD_PORT2_RESP,
