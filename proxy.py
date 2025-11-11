@@ -10,7 +10,7 @@ LISTEN_HOST = "0.0.0.0"
 LISTEN_PORT = 8000
 
 FORWARD_HOST = "127.0.0.1"
-FORWARD_PORT = 5000
+FORWARD_PORT = 6000
 
 BUFFER_SIZE = 4096
 
@@ -21,6 +21,7 @@ async def forward(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
             data = await reader.read(BUFFER_SIZE)
             if not data:
                 break
+            logger.info("Forwarding %d bytes", len(data))
             writer.write(data)
             await writer.drain()
     except Exception as e:

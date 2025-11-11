@@ -29,3 +29,8 @@ class EpmdNode:
         self.proto = proto
         self.hi_ver = hi_ver
         self.lo_ver = lo_ver
+
+    def __repr__(self):
+        return f"EpmdNode(name={self.node_name.decode()}, port={self.port}, type={self.node_type}, proto={self.proto}, hi_ver={self.hi_ver}, lo_ver={self.lo_ver})"
+
+    __str__ = __repr__

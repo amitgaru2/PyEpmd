@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import logging
-from epmd.epmd_node import EpmdNode
-from epmd.errors import EpmdError
+
 from struct import unpack, pack
 
+from epmd.errors import EpmdError
+from epmd.epmd_node import EpmdNode
+
 logger = logging.getLogger("epmd.server")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class EpmdAliveReqPacket:
@@ -94,7 +97,7 @@ class EpmdPortPleaseRespPacket:
                 ">BBHBBHHH",
                 EpmdPortPleaseRespPacket.EPMD_PORT2_RESP,
                 0,
-                node.port,
+                node.node_name == b'riak' and os.getenv("EPMD_PROXY_PORT") and int(os.getenv("EPMD_PROXY_PORT")) or node.port,
                 node.node_type,
                 node.proto,
                 node.hi_ver,
