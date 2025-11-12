@@ -1,3 +1,4 @@
+import time
 import asyncio
 import logging
 
@@ -20,6 +21,41 @@ FORWARD_PORT = 6000
 BUFFER_SIZE = 4096
 
 
+class TimedPacketQueue:
+    delay = 0.5  # seconds
+
+    def __init__(self):
+        self.queue = []
+
+    def push(self, item, writer):
+        self.queue.append((item, writer, time.time()))
+
+    def pop(self):
+        if self.queue and self.queue[0][2] + self.delay <= time.time():
+            return self.queue.pop(0)[0:2]
+        else:
+            return None, None
+
+    def empty(self):
+        return len(self.queue) == 0
+
+
+packet_queue = TimedPacketQueue()
+
+
+async def periodic_packet_processor():
+    while True:
+        await asyncio.sleep(0.1)
+        data, writer = packet_queue.pop()
+        if data is not None:
+            try:
+                logger.info("Processing delayed packet of size %d", len(data))
+                writer.write(data)
+                await writer.drain()
+            except Exception as e:
+                logger.error("Error processing delayed packet: %s", e)
+
+
 async def forward(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     try:
         while True:
@@ -27,12 +63,13 @@ async def forward(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
             if not data:
                 break
             logger.info(
-                "Forwarding %d bytes to %s",
+                "Queuing %d bytes.",
                 len(data),
-                writer.get_extra_info("peername"),
+                # writer.get_extra_info("peername"),
             )
-            writer.write(data)
-            await writer.drain()
+            packet_queue.push(data, writer)
+            # writer.write(data)
+            # await writer.drain()
     except Exception as e:
         logger.error("Error during forwarding: %s", e)
     finally:
@@ -57,7 +94,9 @@ async def handle_client(client_reader, client_writer):
 
     # Forward data both ways concurrently
     await asyncio.gather(
-        forward(client_reader, server_writer), forward(server_reader, client_writer)
+        forward(client_reader, server_writer),
+        forward(server_reader, client_writer),
+        periodic_packet_processor(),
     )
 
 
